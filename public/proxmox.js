@@ -47,10 +47,13 @@ function renderVMList(containerId, items, typeLabel) {
 async function loadProxmox() {
   try {
     const res = await fetch('/api/proxmox');
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const data = await res.json();
 
     const subtitle = document.getElementById('proxmoxSubtitle');
     const pill = document.getElementById('proxmoxPill');
+
+    if (data.error) throw new Error(data.error);
 
     const totalVMs = (data.vms || []).length;
     const runningVMs = (data.vms || []).filter(v => v.status === 'running').length;
@@ -75,10 +78,12 @@ async function loadProxmox() {
 
     renderVMList('vmList', data.vms, 'VM');
     renderVMList('lxcList', data.lxcs, 'LXC');
-  } catch {
+  } catch (e) {
+    document.getElementById('proxmoxSubtitle').textContent = 'Error loading Proxmox data';
     document.getElementById('vmList').innerHTML =
-      '<div class="section-empty" style="color:var(--red)">Failed to load Proxmox data</div>';
-    document.getElementById('lxcList').innerHTML = '';
+      '<div class="section-empty" style="color:var(--red)">' + e.message + '</div>';
+    document.getElementById('lxcList').innerHTML =
+      '<div class="section-empty" style="color:var(--red)">' + e.message + '</div>';
   }
 }
 

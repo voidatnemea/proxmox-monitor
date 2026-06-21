@@ -171,6 +171,26 @@ app.get('/api/proxmox', async (req, res) => {
   }
 });
 
+app.get('/api/proxmox/debug', async (req, res) => {
+  try {
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execAsync = util.promisify(exec);
+    const rawVMs = await execAsync('qm list 2>&1', { timeout: 15000 }).catch(e => ({ stdout: '', stderr: e.message }));
+    const rawLXCs = await execAsync('pct list 2>&1', { timeout: 15000 }).catch(e => ({ stdout: '', stderr: e.message }));
+    const whichQm = await execAsync('which qm', { timeout: 5000 }).catch(e => ({ stdout: '', stderr: e.message }));
+    const whichPct = await execAsync('which pct', { timeout: 5000 }).catch(e => ({ stdout: '', stderr: e.message }));
+    res.json({
+      which: { qm: whichQm.stdout || whichQm.stderr, pct: whichPct.stdout || whichPct.stderr },
+      vms_raw: rawVMs.stdout || rawVMs.stderr,
+      lxcs_raw: rawLXCs.stdout || rawLXCs.stderr,
+      cache: proxmox.getStatus()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/status/:slug', (req, res) => {
   if (req.params.slug === 'proxmox') {
     return res.sendFile(path.join(__dirname, 'public', 'proxmox.html'));

@@ -3,8 +3,6 @@ let editingSectionId = null;
 let editingMonitorId = null;
 let editingSectionForMonitor = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-
 function openModal(id) {
   document.getElementById(id).classList.add('active');
 }
@@ -16,10 +14,12 @@ function closeModal(id) {
 async function loadAdmin() {
   try {
     const res = await fetch('/api/sections');
+    if (!res.ok) throw new Error(res.statusText);
     sections = await res.json();
     renderAdmin();
-  } catch {
-    document.getElementById('adminContent').innerHTML = '<div class="empty-state"><p style="color:var(--red)">Failed to load configuration</p></div>';
+  } catch (e) {
+    document.getElementById('adminContent').innerHTML =
+      '<div class="empty-state"><p style="color:var(--red)">Failed to load configuration: ' + e.message + '</p></div>';
   }
 }
 
@@ -27,7 +27,7 @@ function renderAdmin() {
   const container = document.getElementById('adminContent');
 
   if (sections.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div style="font-size:40px;margin-bottom:12px">\u{2699}</div><p>No sections configured</p><p>Create your first section to get started</p></div>';
+    container.innerHTML = '<div class="empty-state"><div style="font-size:40px;margin-bottom:12px">&#9881;</div><p>No sections configured</p><p>Create your first section to get started</p></div>';
     return;
   }
 
@@ -190,14 +190,6 @@ function openMonitorModal(sectionId, monitorId) {
   openModal('monitorModal');
 }
 
-  document.getElementById('monitorTypeInput').addEventListener('change', function() {
-    updateTargetLabel(this.value);
-  });
-
-  loadAdmin();
-  setInterval(loadAdmin, 30000);
-});
-
 function updateTargetLabel(type) {
   const targetLabel = document.getElementById('targetLabel');
   const expectedGroup = document.getElementById('expectedGroup');
@@ -303,4 +295,10 @@ async function deleteMonitor(id) {
   } catch {}
 }
 
-
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('monitorTypeInput').addEventListener('change', function() {
+    updateTargetLabel(this.value);
+  });
+  loadAdmin();
+  setInterval(loadAdmin, 30000);
+});
