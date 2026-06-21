@@ -3,15 +3,9 @@ const util = require('util');
 const os = require('os');
 
 const execAsync = util.promisify(exec);
+const CACHE_TTL = 60000;
 
-async function runCmd(cmd) {
-  try {
-    const { stdout } = await execAsync(cmd, { timeout: 15000 });
-    return stdout;
-  } catch {
-    return '';
-  }
-}
+let cache = { data: null, timestamp: 0 };
 
 function parseListOutput(output, type) {
   const lines = output.trim().split('\n').filter(Boolean);
@@ -19,11 +13,9 @@ function parseListOutput(output, type) {
 
   const items = [];
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const parts = line.trim().split(/\s+/);
+    const parts = lines[i].trim().split(/\s+/);
     if (parts.length < 3) continue;
 
-    // Find the status field by known value
     let statusIdx = -1;
     for (let j = 0; j < parts.length; j++) {
       const v = parts[j].toLowerCase();
@@ -32,11 +24,9 @@ function parseListOutput(output, type) {
         break;
       }
     }
-
     if (statusIdx < 1) continue;
 
     const id = parts[0];
-    // Name is everything between ID and status
     const name = parts.slice(1, statusIdx).join(' ');
     const status = parts[statusIdx].toLowerCase();
 
@@ -78,7 +68,7 @@ function getLocalIPs() {
   return ips;
 }
 
-async function getStatus() {
+async function refreshCache() {
   try {
     const [vms, lxcs] = await Promise.all([getVMs(), getLXCs()]);
     const localIPs = getLocalIPs();
@@ -91,16 +81,30 @@ async function getStatus() {
       lxc.ips = lxc.status === 'running' ? await getLXCIPs(lxc.id) : [];
     }
 
-    return {
+    cache.data = {
       host: os.hostname(),
       localIPs,
       vms,
       lxcs,
       timestamp: new Date().toISOString()
     };
+    cache.timestamp = Date.now();
   } catch (err) {
-    return { error: err.message, host: os.hostname(), localIPs: getLocalIPs(), vms: [], lxcs: [] };
+    if (!cache.data) {
+      cache.data = { host: os.hostname(), localIPs: getLocalIPs(), vms: [], lxcs: [], timestamp: new Date().toISOString() };
+    }
   }
+}
+
+setInterval(refreshCache, CACHE_TTL);
+refreshCache();
+
+async function getStatus() {
+  if (cache.data && (Date.now() - cache.timestamp < CACHE_TTL)) {
+    return cache.data;
+  }
+  await refreshCache();
+  return cache.data || { host: os.hostname(), localIPs: getLocalIPs(), vms: [], lxcs: [], timestamp: new Date().toISOString() };
 }
 
 module.exports = { getStatus };

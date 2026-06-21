@@ -17,7 +17,7 @@ function renderVMList(containerId, items, typeLabel) {
         <div class="proxmox-vm-info">
           <div class="proxmox-vm-name">
             <span class="status-dot green" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>
-            ${item.name || 'Unnamed'}
+            ${item.name || item.id}
             <span style="color:var(--text-secondary);font-weight:400;font-size:12px">(${item.id})</span>
           </div>
           <div class="proxmox-vm-ips">${(item.ips || []).length ? item.ips.join(', ') : 'No IP data'}</div>
@@ -32,7 +32,7 @@ function renderVMList(containerId, items, typeLabel) {
         <div class="proxmox-vm-info" style="opacity:0.5">
           <div class="proxmox-vm-name">
             <span class="status-dot red" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>
-            ${item.name || 'Unnamed'}
+            ${item.name || item.id}
             <span style="color:var(--text-secondary);font-weight:400;font-size:12px">(${item.id})</span>
           </div>
           <div class="proxmox-vm-ips">${(item.ips || []).length ? item.ips.join(', ') : 'No IP data'}</div>
