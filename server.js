@@ -191,6 +191,10 @@ app.get('/api/proxmox/debug', async (req, res) => {
   }
 });
 
+app.get('/dash/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.get('/status/:slug', (req, res) => {
   if (req.params.slug === 'proxmox') {
     return res.sendFile(path.join(__dirname, 'public', 'proxmox.html'));
