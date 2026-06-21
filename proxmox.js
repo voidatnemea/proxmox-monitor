@@ -20,20 +20,32 @@ function parseListOutput(output, type) {
   const lines = output.trim().split('\n').filter(Boolean);
   if (lines.length < 2) return [];
 
+  // Determine column indices from header (case-insensitive)
+  const headCols = lines[0].trim().split(/\s{2,}/).map(c => c.trim().toLowerCase());
+  const vmidIdx = headCols.indexOf('vmid');
+  const statusIdx = headCols.indexOf('status');
+  let nameIdx = headCols.indexOf('name');
+
   const items = [];
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     let id = '', name = '', status = '';
 
-    // Strategy 1: split by 2+ spaces (fixed-width columns)
-    const wide = line.trim().split(/\s{2,}/);
-    if (wide.length >= 3) {
-      const s = wide[2].trim().toLowerCase();
-      if (s === 'running' || s === 'stopped') {
-        id = wide[0].trim();
-        name = wide[1].trim();
-        status = s;
+    // Strategy 1: column-index approach (handles empty Lock column)
+    if (vmidIdx >= 0 && statusIdx >= 0) {
+      const parts = line.trim().split(/\s{2,}/);
+      let col = 0;
+      const vals = {};
+      for (const p of parts) {
+        if (p !== '') vals[col] = p.trim();
+        col++;
+      }
+      const raw = vals[statusIdx];
+      if (raw && /^(running|stopped)$/i.test(raw)) {
+        id = vals[vmidIdx];
+        status = raw.toLowerCase();
+        if (nameIdx >= 0 && vals[nameIdx]) name = vals[nameIdx];
       }
     }
 
@@ -46,26 +58,10 @@ function parseListOutput(output, type) {
           const v = parts[j].toLowerCase();
           if (v === 'running' || v === 'stopped') { si = j; break; }
         }
-        if (si >= 2) {
+        if (si >= 1) {
           id = parts[0];
-          name = parts.slice(1, si).join(' ');
+          name = parts.slice(si + 1).join(' ');
           status = parts[si].toLowerCase();
-        }
-      }
-    }
-
-    // Strategy 3: column positions from header
-    if (!id) {
-      const head = lines[0];
-      const cSTATUS = head.indexOf('STATUS');
-      const cNAME = head.indexOf('NAME');
-      const cVMID = head.indexOf('VMID');
-      if (cSTATUS > 0 && cNAME > 0 && cVMID >= 0 && line.length > cSTATUS) {
-        const rawStatus = line.substring(cSTATUS).trim().split(/\s+/)[0].toLowerCase();
-        if (rawStatus === 'running' || rawStatus === 'stopped') {
-          id = line.substring(cVMID, cNAME).trim();
-          name = line.substring(cNAME, cSTATUS).trim();
-          status = rawStatus;
         }
       }
     }
