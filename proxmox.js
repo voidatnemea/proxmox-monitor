@@ -13,40 +13,41 @@ async function runCmd(cmd) {
   }
 }
 
-async function getVMs() {
-  const out = await runCmd('qm list 2>/dev/null');
-  const lines = out.trim().split('\n').filter(Boolean);
-  const vms = [];
+function parseTableOutput(output, type) {
+  const lines = output.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const header = lines[0];
+  const colStatus = header.indexOf('STATUS');
+  const colName = header.indexOf('NAME');
+  const colVMID = header.indexOf('VMID');
+
+  if (colStatus === -1 || colName === -1 || colVMID === -1) {
+    return [];
+  }
+
+  const items = [];
   for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].trim().split(/\s+/);
-    if (parts.length >= 3) {
-      vms.push({
-        id: parts[0],
-        name: parts[1],
-        status: parts[2],
-        type: 'vm'
-      });
+    const line = lines[i];
+    if (line.length < colStatus) continue;
+    const id = line.substring(colVMID, colName).trim();
+    const name = line.substring(colName, colStatus).trim();
+    const status = line.substring(colStatus, colStatus + 12).trim().toLowerCase();
+    if (id && status) {
+      items.push({ id, name, status, type });
     }
   }
-  return vms;
+  return items;
+}
+
+async function getVMs() {
+  const out = await runCmd('qm list 2>/dev/null');
+  return parseTableOutput(out, 'vm');
 }
 
 async function getLXCs() {
   const out = await runCmd('pct list 2>/dev/null');
-  const lines = out.trim().split('\n').filter(Boolean);
-  const lxcs = [];
-  for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].trim().split(/\s+/);
-    if (parts.length >= 3) {
-      lxcs.push({
-        id: parts[0],
-        name: parts[1],
-        status: parts[2],
-        type: 'lxc'
-      });
-    }
-  }
-  return lxcs;
+  return parseTableOutput(out, 'lxc');
 }
 
 async function getVMIPs(vmId) {
