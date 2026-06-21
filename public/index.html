@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NmaMonitor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>NmaMonitor</h1>
+      <span class="header-badge" id="statusBadge">All Systems Operational</span>
+    </div>
+    <div class="header-actions">
+      <a href="admin.html" class="btn">Settings</a>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <span class="status-dot red"></span>
+    <span id="statusBarText">One or more services are experiencing issues</span>
+  </div>
+
+  <div id="sectionsContainer"></div>
+
+  <div id="proxmoxContainer"></div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>

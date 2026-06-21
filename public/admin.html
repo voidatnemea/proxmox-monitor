@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NmaMonitor - Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <a href="index.html" class="btn btn-sm" style="text-decoration:none">&larr; Back</a>
+      <h1>Admin</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openSectionModal()">+ Section</button>
+    </div>
+  </div>
+
+  <div id="adminContent">
+    <div class="empty-state">
+      <div class="spinner"></div>
+      <p>Loading configuration...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section Modal -->
+<div class="modal-overlay" id="sectionModal">
+  <div class="modal">
+    <h2 id="sectionModalTitle">New Section</h2>
+    <div class="form-group">
+      <label>Section Name</label>
+      <input class="form-input" id="sectionNameInput" placeholder="e.g. Production, Staging...">
+    </div>
+    <div class="form-group">
+      <label>Logo</label>
+      <select class="form-select" id="sectionLogoInput">
+        <option value="">None</option>
+        <option value="server">Server</option>
+        <option value="cloud">Cloud</option>
+        <option value="database">Database</option>
+        <option value="globe">Globe</option>
+        <option value="shield">Shield</option>
+        <option value="proxmox">Proxmox</option>
+      </select>
+      <div class="form-help">Select a logo icon for the section</div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('sectionModal')">Cancel</button>
+      <button class="btn btn-primary" id="sectionSaveBtn" onclick="saveSection()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Monitor Modal -->
+<div class="modal-overlay" id="monitorModal">
+  <div class="modal">
+    <h2 id="monitorModalTitle">New Monitor</h2>
+    <div class="form-group">
+      <label>Monitor Name</label>
+      <input class="form-input" id="monitorNameInput" placeholder="e.g. Main Website">
+    </div>
+    <div class="form-group">
+      <label>Check Type</label>
+      <select class="form-select" id="monitorTypeInput">
+        <option value="url-non-200">URL returns non-200 HTTP status</option>
+        <option value="url-unavailable">URL becomes unavailable</option>
+        <option value="url-no-keyword">URL does not contain keyword</option>
+        <option value="url-has-keyword">URL contains keyword</option>
+        <option value="ping-no-response">Host does not respond to ping</option>
+        <option value="tcp-no-response">Host does not respond on TCP port</option>
+        <option value="udp-no-response">Host does not respond on UDP port</option>
+        <option value="smtp-no-response">SMTP server does not respond</option>
+        <option value="pop3-no-response">POP3 server does not respond</option>
+        <option value="imap-no-response">IMAP server does not respond</option>
+        <option value="dns-no-response">DNS server does not respond</option>
+        <option value="playwright-fails">Playwright scenario fails</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label id="targetLabel">Target URL / Host</label>
+      <input class="form-input" id="monitorTargetInput" placeholder="https://example.com">
+    </div>
+    <div class="form-group" id="expectedGroup">
+      <label id="expectedLabel">Expected Value (optional)</label>
+      <input class="form-input" id="monitorExpectedInput" placeholder="e.g. keyword, port number, CSS selector">
+      <div class="form-help" id="expectedHelp">For keyword checks: the word to look for. For TCP/UDP: port number. For DNS: domain to resolve. For Playwright: CSS selector.</div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal('monitorModal')">Cancel</button>
+      <button class="btn btn-primary" id="monitorSaveBtn" onclick="saveMonitor()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
