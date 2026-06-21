@@ -13,27 +13,34 @@ async function runCmd(cmd) {
   }
 }
 
-function parseTableOutput(output, type) {
+function parseListOutput(output, type) {
   const lines = output.trim().split('\n').filter(Boolean);
   if (lines.length < 2) return [];
-
-  const header = lines[0];
-  const colStatus = header.indexOf('STATUS');
-  const colName = header.indexOf('NAME');
-  const colVMID = header.indexOf('VMID');
-
-  if (colStatus === -1 || colName === -1 || colVMID === -1) {
-    return [];
-  }
 
   const items = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
-    if (line.length < colStatus) continue;
-    const id = line.substring(colVMID, colName).trim();
-    const name = line.substring(colName, colStatus).trim();
-    const status = line.substring(colStatus, colStatus + 12).trim().toLowerCase();
-    if (id && status) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 3) continue;
+
+    // Find the status field by known value
+    let statusIdx = -1;
+    for (let j = 0; j < parts.length; j++) {
+      const v = parts[j].toLowerCase();
+      if (v === 'running' || v === 'stopped') {
+        statusIdx = j;
+        break;
+      }
+    }
+
+    if (statusIdx < 1) continue;
+
+    const id = parts[0];
+    // Name is everything between ID and status
+    const name = parts.slice(1, statusIdx).join(' ');
+    const status = parts[statusIdx].toLowerCase();
+
+    if (id) {
       items.push({ id, name, status, type });
     }
   }
@@ -41,13 +48,11 @@ function parseTableOutput(output, type) {
 }
 
 async function getVMs() {
-  const out = await runCmd('qm list 2>/dev/null');
-  return parseTableOutput(out, 'vm');
+  return parseListOutput(await runCmd('qm list 2>/dev/null'), 'vm');
 }
 
 async function getLXCs() {
-  const out = await runCmd('pct list 2>/dev/null');
-  return parseTableOutput(out, 'lxc');
+  return parseListOutput(await runCmd('pct list 2>/dev/null'), 'lxc');
 }
 
 async function getVMIPs(vmId) {
@@ -79,19 +84,11 @@ async function getStatus() {
     const localIPs = getLocalIPs();
 
     for (const vm of vms) {
-      if (vm.status === 'running') {
-        vm.ips = await getVMIPs(vm.id);
-      } else {
-        vm.ips = [];
-      }
+      vm.ips = vm.status === 'running' ? await getVMIPs(vm.id) : [];
     }
 
     for (const lxc of lxcs) {
-      if (lxc.status === 'running') {
-        lxc.ips = await getLXCIPs(lxc.id);
-      } else {
-        lxc.ips = [];
-      }
+      lxc.ips = lxc.status === 'running' ? await getLXCIPs(lxc.id) : [];
     }
 
     return {
