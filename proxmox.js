@@ -17,29 +17,36 @@ function parseListOutput(output, type) {
   const lines = output.trim().split('\n').filter(Boolean);
   if (lines.length < 2) return [];
 
+  const head = lines[0];
+  const colVMID = head.indexOf('VMID');
+  const colNAME = head.indexOf('NAME');
+  const colSTATUS = head.indexOf('STATUS');
+  if (colVMID < 0 || colNAME < 0 || colSTATUS < 0) return [];
+
   const items = [];
   for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].trim().split(/\s+/);
-    if (parts.length < 3) continue;
+    const line = lines[i];
+    if (line.length <= colSTATUS) continue;
 
-    let statusIdx = -1;
-    for (let j = 0; j < parts.length; j++) {
-      const v = parts[j].toLowerCase();
-      if (v === 'running' || v === 'stopped') {
-        statusIdx = j;
-        break;
-      }
+    const id = line.substring(colVMID, colNAME).trim();
+    const name = line.substring(colNAME, colSTATUS).trim();
+    const status = line.substring(colSTATUS).trim().split(/\s+/)[0].toLowerCase();
+
+    if (id && (status === 'running' || status === 'stopped')) {
+      items.push({ id, name, status, type });
     }
-    if (statusIdx < 1) continue;
-
-    items.push({
-      id: parts[0],
-      name: parts.slice(1, statusIdx).join(' '),
-      status: parts[statusIdx].toLowerCase(),
-      type
-    });
   }
   return items;
+}
+
+async function getVMName(vmId) {
+  const out = await runCmd(`qm config ${vmId} 2>/dev/null | grep -i '^name:' | head -1 | awk '{print $2}'`);
+  return out.trim();
+}
+
+async function getLXCName(lxcId) {
+  const out = await runCmd(`pct config ${lxcId} 2>/dev/null | grep -i '^hostname:' | head -1 | awk '{print $2}'`);
+  return out.trim();
 }
 
 async function getVMIPs(vmId) {
@@ -78,6 +85,11 @@ async function refresh() {
       parseListOutput(await runCmd('pct list 2>/dev/null'), 'lxc')
     ]);
 
+    // Don't wipe existing data if Proxmox commands return nothing
+    if (vms.length === 0 && lxcs.length === 0 && Object.keys(nameCache).length > 0) {
+      return;
+    }
+
     statusCache = {};
 
     for (const item of vms) {
@@ -90,8 +102,15 @@ async function refresh() {
       statusCache[item.id] = item.status;
     }
 
-    // Fetch IPs once per VM/LXC when first seen running
+    // Fill in missing names from config, and fetch IPs
     for (const [id, info] of Object.entries(nameCache)) {
+      if (!info.name) {
+        const configName = info.type === 'vm' ? await getVMName(id) : await getLXCName(id);
+        if (configName) {
+          info.name = configName;
+          nameCache[id] = { ...info, name: configName };
+        }
+      }
       if (statusCache[id] === 'running' && !ipCache[id]) {
         ipCache[id] = await (info.type === 'vm' ? getVMIPs(id) : getLXCIPs(id));
       }

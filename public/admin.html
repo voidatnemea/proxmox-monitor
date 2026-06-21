@@ -3,29 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NmaMonitor - Admin</title>
+<title>Nemea Monitoring - Admin</title>
 <base href="/">
 <link rel="stylesheet" href="style.css">
+<style>
+.admin-wrap { max-width: 1200px; }
+</style>
 </head>
 <body>
-<div class="bg-glow"></div>
-<div class="bg-glow-2"></div>
+<div class="bg-canvas">
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+  <div class="bg-blob bg-blob-3"></div>
+  <div class="bg-blob bg-blob-4"></div>
+</div>
+<div class="rain-layer" id="rainLayer"></div>
+<div class="bg-grid"></div>
 
-<div class="container">
+<div class="page admin-wrap">
   <div class="header">
     <div class="header-left">
-      <a href="index.html" class="btn btn-sm" style="text-decoration:none">&larr; Back</a>
-      <h1>Admin</h1>
+      <a href="index.html" class="btn btn-ghost btn-sm" style="text-decoration:none">&larr; Back</a>
+      <h1>Settings</h1>
     </div>
     <div class="header-actions">
-      <button class="btn btn-primary" onclick="openSectionModal()">+ Section</button>
+      <button class="btn btn-primary btn-sm" onclick="openSectionModal()">+ Section</button>
     </div>
   </div>
 
   <div id="adminContent">
-    <div class="empty-state">
+    <div class="loading-wrap">
       <div class="spinner"></div>
-      <p>Loading configuration...</p>
+      <span>Loading configuration...</span>
     </div>
   </div>
 </div>
@@ -99,6 +108,9 @@
   </div>
 </div>
 
+<script>
+(function(){var r=document.getElementById('rainLayer');if(!r)return;for(var i=0;i<50;i++){var s=document.createElement('div');s.className='rain-streak';s.style.left=Math.random()*100+'%';s.style.height=(20+Math.random()*80)+'px';s.style.animationDuration=(0.5+Math.random()*1.5)+'s';s.style.animationDelay=Math.random()*2+'s';s.style.opacity=0.2+Math.random()*0.3;r.appendChild(s)}})();
+</script>
 <script src="admin.js"></script>
 </body>
 </html>
