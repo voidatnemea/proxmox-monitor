@@ -3,6 +3,8 @@ let editingSectionId = null;
 let editingMonitorId = null;
 let editingSectionForMonitor = null;
 
+document.addEventListener('DOMContentLoaded', () => {
+
 function openModal(id) {
   document.getElementById(id).classList.add('active');
 }
@@ -188,8 +190,12 @@ function openMonitorModal(sectionId, monitorId) {
   openModal('monitorModal');
 }
 
-document.getElementById('monitorTypeInput').addEventListener('change', function() {
-  updateTargetLabel(this.value);
+  document.getElementById('monitorTypeInput').addEventListener('change', function() {
+    updateTargetLabel(this.value);
+  });
+
+  loadAdmin();
+  setInterval(loadAdmin, 30000);
 });
 
 function updateTargetLabel(type) {
@@ -297,5 +303,4 @@ async function deleteMonitor(id) {
   } catch {}
 }
 
-loadAdmin();
-setInterval(loadAdmin, 30000);
+

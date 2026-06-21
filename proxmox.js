@@ -9,7 +9,8 @@ async function runCmd(cmd) {
   try {
     const { stdout } = await execAsync(cmd, { timeout: 15000 });
     return stdout;
-  } catch {
+  } catch (e) {
+    console.error('[Proxmox] cmd error:', e.message);
     return '';
   }
 }
@@ -172,12 +173,13 @@ async function refresh() {
       }
     }
 
-    // Fill in config names for cached items with empty names
+    // Only cleanup stale entries if we successfully parsed the lists
     const allCached = db.getProxmoxCache();
-    for (const c of allCached) {
-      if (found.has(c.id)) continue;
-      // Remove items no longer in Proxmox
-      db.deleteProxmoxCache(c.id);
+    if (vms.length > 0 || lxcs.length > 0) {
+      for (const c of allCached) {
+        if (found.has(c.id)) continue;
+        db.deleteProxmoxCache(c.id);
+      }
     }
 
     // For existing items with empty names, try config
@@ -202,7 +204,7 @@ async function refresh() {
       }
     }
 
-  } catch {}
+  } catch (e) { console.error('[Proxmox] refresh error:', e.message); }
 }
 
 function buildResponse() {
