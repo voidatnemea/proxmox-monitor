@@ -16,24 +16,23 @@
 <div class="bg-grid"></div>
 
 <div class="page" id="page">
-  <div class="header">
-    <div class="header-left">
-      <h1>Nemea Monitoring</h1>
-      <span class="header-badge" id="statusBadge">All Systems Operational</span>
+  <div class="detail-header">
+    <a class="back-btn" href="/" id="backLink">&larr;</a>
+    <div class="detail-header-info">
+      <h1 id="sectionTitle">Loading...</h1>
+      <div class="subtitle" id="sectionSubtitle"></div>
     </div>
-    <div class="header-actions">
-      <a href="admin.html" class="btn btn-ghost btn-sm">Settings</a>
-    </div>
+    <span class="status-pill" id="sectionPill"></span>
   </div>
 
-  <div class="status-bar" id="statusBar">
-    <span class="status-dot red"></span>
-    <span id="statusBarText">One or more services are experiencing issues</span>
+  <div class="detail-section">
+    <div class="detail-section-title">Monitors</div>
+    <div id="monitorList">
+      <div class="loading-wrap"><div class="spinner"></div><span>Loading monitors...</span></div>
+    </div>
   </div>
-
-  <div class="section-grid" id="sectionsContainer"></div>
 </div>
 
-<script src="main.js"></script>
+<script src="status.js"></script>
 </body>
 </html>

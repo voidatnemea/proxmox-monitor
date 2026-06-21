@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Proxmox Status - Nemea Monitoring</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-canvas">
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+  <div class="bg-blob bg-blob-3"></div>
+  <div class="bg-blob bg-blob-4"></div>
+</div>
+<div class="bg-grid"></div>
+
+<div class="page" id="page">
+  <div class="detail-header">
+    <a class="back-btn" href="/">&larr;</a>
+    <div class="detail-header-info">
+      <h1>
+        <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <rect x="10" y="10" width="100" height="100" rx="20" fill="none" stroke="currentColor" stroke-width="3"/>
+          <rect x="25" y="32" width="70" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+          <line x1="35" y1="32" x2="35" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="60" y1="32" x2="60" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="85" y1="32" x2="85" y2="18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="40" cy="63" r="3.5" fill="currentColor"/>
+          <circle cx="55" cy="55" r="3.5" fill="currentColor"/>
+          <circle cx="70" cy="63" r="3.5" fill="currentColor"/>
+          <line x1="40" y1="63" x2="55" y2="55" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="55" y1="55" x2="70" y2="63" stroke="currentColor" stroke-width="1.5"/>
+          <text x="60" y="100" font-family="Arial,sans-serif" font-weight="700" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.7">PROXMOX</text>
+        </svg>
+        Proxmox
+      </h1>
+      <div class="subtitle" id="proxmoxSubtitle">Loading Proxmox data...</div>
+    </div>
+    <span class="status-pill" id="proxmoxPill"></span>
+  </div>
+
+  <div class="detail-section">
+    <div class="detail-section-title" id="vmSectionTitle">Virtual Machines</div>
+    <div id="vmList">
+      <div class="loading-wrap"><div class="spinner"></div><span>Loading VMs...</span></div>
+    </div>
+  </div>
+
+  <div class="detail-section" style="margin-top:16px;">
+    <div class="detail-section-title">Containers (LXC)</div>
+    <div id="lxcList">
+      <div class="loading-wrap"><div class="spinner"></div><span>Loading containers...</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="proxmox.js"></script>
+</body>
+</html>

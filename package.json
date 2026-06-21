@@ -1,7 +1,7 @@
 {
-  "name": "nma-monitor",
+  "name": "nemea-monitoring",
   "version": "2.0.0",
-  "description": "Status page monitor for NmaNetwork",
+  "description": "Nemea Monitoring - Status page for Proxmox infrastructure",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
