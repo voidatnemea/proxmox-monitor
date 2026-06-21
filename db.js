@@ -36,6 +36,14 @@ db.exec(`
     checked_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (monitor_id) REFERENCES monitors(id) ON DELETE CASCADE
   );
+  CREATE TABLE IF NOT EXISTS proxmox_cache (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL DEFAULT 'lxc',
+    status TEXT NOT NULL DEFAULT 'stopped',
+    ips TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 function getSections() {
@@ -143,9 +151,34 @@ function hasAnyDown() {
   return row.cnt > 0;
 }
 
+// --- Proxmox cache ---
+
+function getProxmoxCache() {
+  return db.prepare('SELECT * FROM proxmox_cache ORDER BY type, id').all();
+}
+
+function upsertProxmoxCache(id, name, type, status, ips) {
+  db.prepare(`INSERT INTO proxmox_cache (id, name, type, status, ips, updated_at) VALUES (?, ?, ?, ?, ?, datetime('now'))
+    ON CONFLICT(id) DO UPDATE SET name = excluded.name, status = excluded.status, ips = excluded.ips, updated_at = excluded.updated_at`)
+    .run(id, name, type, status, ips || '');
+}
+
+function updateProxmoxStatus(id, status) {
+  db.prepare("UPDATE proxmox_cache SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
+}
+
+function deleteProxmoxCache(id) {
+  db.prepare('DELETE FROM proxmox_cache WHERE id = ?').run(id);
+}
+
+function clearProxmoxCache() {
+  db.prepare('DELETE FROM proxmox_cache').run();
+}
+
 module.exports = {
   getSections, getSection, createSection, updateSection, deleteSection,
   getMonitors, getMonitor, getSectionMonitors,
   createMonitor, updateMonitor, deleteMonitor,
-  getStatus, updateStatus, getAllStatus, getPrevStatus, hasAnyDown
+  getStatus, updateStatus, getAllStatus, getPrevStatus, hasAnyDown,
+  getProxmoxCache, upsertProxmoxCache, updateProxmoxStatus, deleteProxmoxCache, clearProxmoxCache
 };
