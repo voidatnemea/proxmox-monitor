@@ -3,9 +3,15 @@ const util = require('util');
 const os = require('os');
 
 const execAsync = util.promisify(exec);
-const CACHE_TTL = 60000;
 
-let cache = { data: null, timestamp: 0 };
+async function runCmd(cmd) {
+  try {
+    const { stdout } = await execAsync(cmd, { timeout: 15000 });
+    return stdout;
+  } catch {
+    return '';
+  }
+}
 
 function parseListOutput(output, type) {
   const lines = output.trim().split('\n').filter(Boolean);
@@ -26,23 +32,14 @@ function parseListOutput(output, type) {
     }
     if (statusIdx < 1) continue;
 
-    const id = parts[0];
-    const name = parts.slice(1, statusIdx).join(' ');
-    const status = parts[statusIdx].toLowerCase();
-
-    if (id) {
-      items.push({ id, name, status, type });
-    }
+    items.push({
+      id: parts[0],
+      name: parts.slice(1, statusIdx).join(' '),
+      status: parts[statusIdx].toLowerCase(),
+      type
+    });
   }
   return items;
-}
-
-async function getVMs() {
-  return parseListOutput(await runCmd('qm list 2>/dev/null'), 'vm');
-}
-
-async function getLXCs() {
-  return parseListOutput(await runCmd('pct list 2>/dev/null'), 'lxc');
 }
 
 async function getVMIPs(vmId) {
@@ -68,43 +65,80 @@ function getLocalIPs() {
   return ips;
 }
 
-async function refreshCache() {
+// Persistent caches
+const nameCache = {};
+const ipCache = {};
+let statusCache = {};
+let cachedResponse = null;
+
+async function refresh() {
   try {
-    const [vms, lxcs] = await Promise.all([getVMs(), getLXCs()]);
-    const localIPs = getLocalIPs();
+    const [vms, lxcs] = await Promise.all([
+      parseListOutput(await runCmd('qm list 2>/dev/null'), 'vm'),
+      parseListOutput(await runCmd('pct list 2>/dev/null'), 'lxc')
+    ]);
 
-    for (const vm of vms) {
-      vm.ips = vm.status === 'running' ? await getVMIPs(vm.id) : [];
+    statusCache = {};
+
+    for (const item of vms) {
+      nameCache[item.id] = { name: item.name, type: 'vm' };
+      statusCache[item.id] = item.status;
     }
 
-    for (const lxc of lxcs) {
-      lxc.ips = lxc.status === 'running' ? await getLXCIPs(lxc.id) : [];
+    for (const item of lxcs) {
+      nameCache[item.id] = { name: item.name, type: 'lxc' };
+      statusCache[item.id] = item.status;
     }
 
-    cache.data = {
-      host: os.hostname(),
-      localIPs,
-      vms,
-      lxcs,
-      timestamp: new Date().toISOString()
+    // Fetch IPs once per VM/LXC when first seen running
+    for (const [id, info] of Object.entries(nameCache)) {
+      if (statusCache[id] === 'running' && !ipCache[id]) {
+        ipCache[id] = await (info.type === 'vm' ? getVMIPs(id) : getLXCIPs(id));
+      }
+    }
+
+    buildResponse();
+  } catch {
+    if (!cachedResponse) buildResponse();
+  }
+}
+
+function buildResponse() {
+  const vms = [];
+  const lxcs = [];
+
+  for (const [id, info] of Object.entries(nameCache)) {
+    const item = {
+      id,
+      name: info.name,
+      type: info.type,
+      status: statusCache[id] || 'stopped',
+      ips: ipCache[id] || []
     };
-    cache.timestamp = Date.now();
-  } catch (err) {
-    if (!cache.data) {
-      cache.data = { host: os.hostname(), localIPs: getLocalIPs(), vms: [], lxcs: [], timestamp: new Date().toISOString() };
-    }
+    if (info.type === 'vm') vms.push(item);
+    else lxcs.push(item);
   }
+
+  cachedResponse = {
+    host: os.hostname(),
+    localIPs: getLocalIPs(),
+    vms,
+    lxcs,
+    timestamp: new Date().toISOString()
+  };
 }
 
-setInterval(refreshCache, CACHE_TTL);
-refreshCache();
-
-async function getStatus() {
-  if (cache.data && (Date.now() - cache.timestamp < CACHE_TTL)) {
-    return cache.data;
-  }
-  await refreshCache();
-  return cache.data || { host: os.hostname(), localIPs: getLocalIPs(), vms: [], lxcs: [], timestamp: new Date().toISOString() };
+function getStatus() {
+  return cachedResponse || {
+    host: os.hostname(),
+    localIPs: getLocalIPs(),
+    vms: [],
+    lxcs: [],
+    timestamp: new Date().toISOString()
+  };
 }
+
+setInterval(refresh, 10000);
+refresh();
 
 module.exports = { getStatus };
